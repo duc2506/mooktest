@@ -21,6 +21,14 @@ export class QuizService {
   deleteQuestion(id: number, qid: number) {
     return this.http.delete(this.api + '/quizzes/' + id + '/questions/' + qid);
   }
+  getQuestionImportTemplate() {
+    return this.http.get(this.api + '/quizzes/question-import-template', { responseType: 'blob' });
+  }
+  importQuestionsFromExcel(id: number, file: File) {
+    const data = new FormData();
+    data.append('file', file);
+    return this.http.post<{ imported: number }>(this.api + '/quizzes/' + id + '/questions/import-excel', data);
+  }
   addAnswer(id: number, qid: number, data: CreateAnswerRequest) {
     return this.http.post<Answer>(this.api + '/quizzes/' + id + '/questions/' + qid + '/answers', data);
   }

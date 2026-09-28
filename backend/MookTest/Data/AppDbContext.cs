@@ -25,6 +25,7 @@ namespace MookTest.Data
                 .HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<QuizSubmission>().HasOne(s => s.User).WithMany()
                 .HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<QuizSubmission>().HasIndex(s => new { s.UserId, s.QuizId });
             modelBuilder.Entity<QuizSubmission>().HasOne(s => s.Attempt).WithOne()
                 .HasForeignKey<QuizSubmission>(s => s.AttemptId).OnDelete(DeleteBehavior.Restrict);
 

@@ -125,12 +125,26 @@ await Request("POST", participation + "/submit", 400, new { attemptId = attempt,
     new { questionId = essay, answerIds = Array.Empty<int>(), responseText = "Text" },
     new { questionId = single, answerIds = new[] { a3, a4 } } } }, trainee);
 var result = await Request("POST", participation + "/submit", 200, valid, trainee);
+Check(Id(result, "correctChoices") == 2 && Id(result, "totalChoices") == 2,
+    "automatic score counts only choice questions");
+Check(Id(result, "unscoredTextQuestions") == 1, "written question is explicitly unscored");
+Check(result!["answers"]!.AsArray().All(a => a!["correctAnswers"] is null),
+    "correct answers are hidden by default");
 var submitted = result!["answers"]!.AsArray();
 Check(submitted.Single(a => Id(a, "questionId") == multi)!["selectedAnswers"]!.AsArray().Count == 2, "multiple answers persisted");
 Check(submitted.Single(a => Id(a, "questionId") == essay)!["responseText"]!.GetValue<string>() == "Written response", "nullable AnswerId permits written responses");
 await Request("POST", participation + "/submit", 409, valid, trainee);
+await Request("POST", participation + "/start", 409, new { }, trainee);
+var afterSubmitCatalog = await Request("GET", "/api/participation/quizzes", 200, token: trainee);
+Check(!afterSubmitCatalog!.AsArray().Any(q => Id(q, "quizId") == quiz),
+    "submitted quiz is no longer available to the same trainee");
+await Request("PUT", root, 200, new { title = "Integration edited", duration = 30,
+    showAnswersAfterSubmit = true }, trainer);
 var mine = await Request("GET", "/api/participation/submissions", 200, token: trainee);
 Check(mine!.AsArray().Count == 1, "trainee sees their submission");
+Check(mine.AsArray()[0]!["answers"]!.AsArray().Any(a =>
+    a!["correctAnswers"] is JsonArray correctAnswers && correctAnswers.Count > 0),
+    "trainer can reveal correct answers after submission");
 var theirs = await Request("GET", "/api/participation/submissions", 200, token: other);
 Check(theirs!.AsArray().Count == 0, "another trainee cannot see this submission");
 await Request("GET", root + "/submissions", 403, token: trainee);

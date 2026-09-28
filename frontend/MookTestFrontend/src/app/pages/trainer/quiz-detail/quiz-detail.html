@@ -5,6 +5,18 @@
     <div class="page-header"><div><h1>{{ q.title }}</h1><p>{{ q.description }}</p><strong>{{ q.duration }} phút</strong></div>
       <a class="btn" routerLink="/trainer/quizzes">Quay lại</a></div>
     <p>Đề có lượt làm bài sẽ được khóa chỉnh sửa để giữ nguyên nội dung bài làm.</p>
+    <div class="form-card">
+      <h2>Nhập câu hỏi từ Excel</h2>
+      <p>Tải file mẫu, điền mỗi câu hỏi trên một dòng rồi lưu dạng .xlsx. Cột Type dùng số 1–6:
+        1 Chọn nhiều, 2 Chọn một, 3 Đúng/Sai, 4 Điền chỗ trống, 5 Trả lời ngắn, 6 Tự luận.
+        Với câu trắc nghiệm, nhập ít nhất hai đáp án và đánh dấu cột Correct bằng 1 (đúng) hoặc 0 (sai).
+        Câu trả lời văn bản để trống các cột Answer/Correct. Có thể thêm tối đa 20 cặp cột đáp án theo đúng tên trong mẫu.</p>
+      <div class="form-actions">
+        <button class="btn" type="button" [disabled]="templateBusy()" (click)="downloadExcelTemplate()">Tải file mẫu Excel</button>
+        <input #excelInput type="file" accept=".xlsx" aria-label="Chọn file Excel câu hỏi" (change)="selectExcel(excelInput)">
+        <button class="btn btn-primary" type="button" [disabled]="busy() || !excelFile()" (click)="uploadExcel(excelInput)">Nhập câu hỏi</button>
+      </div>
+    </div>
     <div class="bank-picker-heading"><div><h2>Chọn câu từ ngân hàng</h2><p>Lấy cả câu hỏi và đáp án vào đề. Bản sao trong đề có thể chỉnh sửa riêng.</p></div>
       <button class="btn btn-primary" type="button" (click)="toggleBank()">{{ showBank() ? 'Đóng ngân hàng' : 'Chọn câu hỏi' }}</button></div>
     @if (showBank()) {

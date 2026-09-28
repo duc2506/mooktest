@@ -11,11 +11,11 @@ public class QuizParticipationController(IQuizParticipationService service) : Co
 {
     private int UserId => int.Parse(User.FindFirstValue("sub")!);
     [HttpGet("quizzes")]
-    public async Task<IActionResult> List() => Ok(await service.GetAvailableQuizzesAsync());
+    public async Task<IActionResult> List() => Ok(await service.GetAvailableQuizzesAsync(UserId));
     [HttpGet("quizzes/{id:int}")]
     public async Task<IActionResult> Details(int id)
     {
-        var quiz = await service.GetQuizDetailsAsync(id);
+        var quiz = await service.GetQuizDetailsAsync(id, UserId);
         return quiz is null ? NotFound() : Ok(quiz);
     }
     [HttpPost("quizzes/{id:int}/start")]

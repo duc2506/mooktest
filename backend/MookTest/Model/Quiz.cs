@@ -13,6 +13,7 @@ namespace MookTest.Model
         
         [Required]
         public int Duration { get; set; }
+        public bool ShowAnswersAfterSubmit { get; set; }
         public ICollection<Question> Questions { get; set; } = new List<Question>();
         public ICollection<QuizSubmission> QuizSubmissions { get; set; } = new List<QuizSubmission>();
     }

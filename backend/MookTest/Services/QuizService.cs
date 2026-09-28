@@ -37,7 +37,8 @@ namespace MookTest.Services
                     QuizId = q.QuizId,
                     Title = q.Title,
                     Description = q.Description,
-                    Duration = q.Duration
+                    Duration = q.Duration,
+                    ShowAnswersAfterSubmit = q.ShowAnswersAfterSubmit
                 })
                 .ToListAsync();
         }
@@ -54,6 +55,7 @@ namespace MookTest.Services
                     Title = q.Title,
                     Description = q.Description,
                     Duration = q.Duration,
+                    ShowAnswersAfterSubmit = q.ShowAnswersAfterSubmit,
 
                     Questions = q.Questions.OrderBy(question => question.QuestionId)
                         .Select(question => new QuestionDto
@@ -86,7 +88,8 @@ namespace MookTest.Services
             {
                 Title = dto.Title.Trim(),
                 Description = dto.Description?.Trim(),
-                Duration = dto.Duration
+                Duration = dto.Duration,
+                ShowAnswersAfterSubmit = dto.ShowAnswersAfterSubmit
             };
 
             _context.Quizzes.Add(quiz);
@@ -99,7 +102,8 @@ namespace MookTest.Services
                 QuizId = quiz.QuizId,
                 Title = quiz.Title,
                 Description = quiz.Description,
-                Duration = quiz.Duration
+                Duration = quiz.Duration,
+                ShowAnswersAfterSubmit = quiz.ShowAnswersAfterSubmit
             };
         }
 
@@ -117,10 +121,18 @@ namespace MookTest.Services
                 return false;
             }
 
-            await EnsureEditableAsync(id);
-            quiz.Title = dto.Title.Trim();
-            quiz.Description = dto.Description?.Trim();
-            quiz.Duration = dto.Duration;
+            var newTitle = dto.Title.Trim();
+            var newDescription = dto.Description?.Trim();
+            var contentChanged = quiz.Title != newTitle ||
+                (quiz.Description ?? "") != (newDescription ?? "") || quiz.Duration != dto.Duration;
+            if (contentChanged)
+            {
+                await EnsureEditableAsync(id);
+                quiz.Title = newTitle;
+                quiz.Description = newDescription;
+                quiz.Duration = dto.Duration;
+            }
+            quiz.ShowAnswersAfterSubmit = dto.ShowAnswersAfterSubmit;
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();

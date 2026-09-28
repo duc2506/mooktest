@@ -15,6 +15,13 @@ import { apiError } from '../../services/api-error';
       @for (submission of submissions(); track submission.quizSubmissionId) {
         <article class="question-card">
           <h2>{{ submission.title }}</h2>
+          @if (submission.totalChoices > 0) {
+            <p>Điểm trắc nghiệm: {{ (10 * submission.correctChoices / submission.totalChoices).toFixed(1) }}/10
+              · Đúng {{ submission.correctChoices }}/{{ submission.totalChoices }} câu.</p>
+          }
+          @if (submission.unscoredTextQuestions > 0) {
+            <p>{{ submission.unscoredTextQuestions }} câu trả lời văn bản chưa được chấm.</p>
+          }
           <p>Mã bài: {{ submission.quizSubmissionId }} · {{ submission.submittedAt | date:'dd/MM/yyyy HH:mm' }}
             @if (quizId) { · {{ submission.traineeName || 'Bài nộp cũ' }} }</p>
           <details><summary>Xem câu trả lời</summary>
@@ -22,6 +29,7 @@ import { apiError } from '../../services/api-error';
               <div class="submitted-answer"><h3>{{ answer.content }}</h3>
                 @for (selected of answer.selectedAnswers; track $index) { <p>• {{ selected }}</p> }
                 @if (answer.responseText) { <p class="response-text">{{ answer.responseText }}</p> }
+                @if (answer.correctAnswers?.length) { <p>Đáp án đúng: {{ answer.correctAnswers!.join(', ') }}</p> }
               </div>
             }
           </details>

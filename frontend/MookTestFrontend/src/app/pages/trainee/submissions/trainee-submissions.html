@@ -13,6 +13,22 @@
           <div class="history-card-top"><span class="history-status"><i></i> ĐÃ NỘP</span>
             <time>{{ submission.submittedAt | date:'dd/MM/yyyy · HH:mm' }}</time></div>
           <h3>{{ submission.title }}</h3>
+          @if (submission.totalChoices > 0) {
+            <p><strong>Điểm trắc nghiệm: {{ (10 * submission.correctChoices / submission.totalChoices).toFixed(1) }}/10</strong>
+              · Đúng {{ submission.correctChoices }}/{{ submission.totalChoices }} câu.</p>
+          } @else { <p>Đề này không có câu trắc nghiệm để chấm tự động.</p> }
+          @if (submission.unscoredTextQuestions > 0) {
+            <p>{{ submission.unscoredTextQuestions }} câu trả lời văn bản chưa được chấm; điểm trên chỉ tính phần trắc nghiệm.</p>
+          }
+          @if (!submission.showCorrectAnswers) { <p>Trainer chưa cho phép xem đáp án đúng.</p> }
+          @if (submission.totalChoices > 0) {
+            <p><strong>Điểm trắc nghiệm: {{ (10 * submission.correctChoices / submission.totalChoices).toFixed(1) }}/10</strong>
+              · Đúng {{ submission.correctChoices }}/{{ submission.totalChoices }} câu.</p>
+          } @else { <p>Đề này không có câu trắc nghiệm để chấm tự động.</p> }
+          @if (submission.unscoredTextQuestions > 0) {
+            <p>{{ submission.unscoredTextQuestions }} câu trả lời văn bản chưa được chấm; điểm trên chỉ tính phần trắc nghiệm.</p>
+          }
+          @if (!submission.showCorrectAnswers) { <p>Trainer chưa cho phép xem đáp án đúng.</p> }
           <div class="history-meta"><span>Mã bài #{{ submission.quizSubmissionId }}</span>
             <span>{{ submission.answers.length }} câu trả lời</span></div>
           <details><summary>Xem câu trả lời <span aria-hidden="true">⌄</span></summary>
@@ -21,6 +37,12 @@
                 <div class="history-answer"><span class="answer-index">{{ i + 1 }}</span><div><h4>{{ answer.content }}</h4>
                   @for (selected of answer.selectedAnswers; track $index) { <span class="selected-answer">{{ selected }}</span> }
                   @if (answer.responseText) { <p class="response-text">{{ answer.responseText }}</p> }
+                  @if (answer.correctAnswers?.length) {
+                    <p>Đáp án đúng: {{ answer.correctAnswers!.join(', ') }}</p>
+                  }
+                  @if (answer.correctAnswers?.length) {
+                    <p>Đáp án đúng: {{ answer.correctAnswers!.join(', ') }}</p>
+                  }
                 </div></div>
               }
             </div>

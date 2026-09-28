@@ -5,6 +5,8 @@ public record TraineeQuestionDto(int QuestionId, string Content, QuestionType Qu
 public record StartedQuizDto(int QuizId, string Title, string? Description, int Duration,
     Guid AttemptId, DateTime StartedAt, DateTime ExpiresAt, List<TraineeQuestionDto> Questions);
 public record SubmissionDto(int QuizSubmissionId, int QuizId, string Title, string? TraineeName,
-    DateTime SubmittedAt, List<SubmittedResponseDto> Answers);
-public record SubmittedResponseDto(int QuestionId, string Content, List<string> SelectedAnswers, string? ResponseText);
+    DateTime SubmittedAt, List<SubmittedResponseDto> Answers, int CorrectChoices, int TotalChoices,
+    int UnscoredTextQuestions, bool ShowCorrectAnswers);
+public record SubmittedResponseDto(int QuestionId, string Content, List<string> SelectedAnswers,
+    string? ResponseText, List<string>? CorrectAnswers);
 

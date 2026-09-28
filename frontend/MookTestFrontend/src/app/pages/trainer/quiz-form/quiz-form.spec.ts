@@ -10,10 +10,10 @@ describe('Quiz form validation', () => {
       provideZonelessChangeDetection(), provideHttpClient(), provideHttpClientTesting(), provideRouter([])
     ] });
     const component = TestBed.createComponent(QuizFormComponent).componentInstance;
-    component.draft.set({ title: ' ', description: '', duration: 1 });
+    component.draft.set({ title: ' ', description: '', duration: 1, showAnswersAfterSubmit: false });
     component.submit();
     expect(component.error()).toBeTruthy();
-    component.draft.set({ title: 'Test', description: '', duration: 1.5 });
+    component.draft.set({ title: 'Test', description: '', duration: 1.5, showAnswersAfterSubmit: false });
     component.submit();
     expect(component.error()).toContain('nguyên dương');
     TestBed.inject(HttpTestingController).expectNone('/api/quizzes');

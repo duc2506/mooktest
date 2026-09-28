@@ -21,15 +21,19 @@ public class QuizParticipationService(AppDbContext db) : IQuizParticipationServi
             (question.QuestionType != QuestionType.TrueFalse || question.Answers.Count() == 2));
     private static readonly Func<Quiz, bool> IsReadyQuiz = ReadyQuiz.Compile();
 
-    public Task<List<QuizDto>> GetAvailableQuizzesAsync() => db.Quizzes.AsNoTracking()
-        .Where(ReadyQuiz)
+    public Task<List<QuizDto>> GetAvailableQuizzesAsync(int userId) => db.Quizzes.AsNoTracking()
+        .Where(ReadyQuiz).Where(q => !db.QuizSubmissions.Any(s => s.QuizId == q.QuizId && s.UserId == userId))
         .OrderByDescending(q => q.QuizId).Select(q => new QuizDto {
-            QuizId = q.QuizId, Title = q.Title, Description = q.Description, Duration = q.Duration
+            QuizId = q.QuizId, Title = q.Title, Description = q.Description, Duration = q.Duration,
+            ShowAnswersAfterSubmit = q.ShowAnswersAfterSubmit
         }).ToListAsync();
 
-    public Task<QuizDto?> GetQuizDetailsAsync(int id) => db.Quizzes.AsNoTracking()
-        .Where(ReadyQuiz).Where(q => q.QuizId == id).Select(q => new QuizDto {
-            QuizId = q.QuizId, Title = q.Title, Description = q.Description, Duration = q.Duration
+    public Task<QuizDto?> GetQuizDetailsAsync(int id, int userId) => db.Quizzes.AsNoTracking()
+        .Where(ReadyQuiz).Where(q => q.QuizId == id &&
+            !db.QuizSubmissions.Any(s => s.QuizId == q.QuizId && s.UserId == userId))
+        .Select(q => new QuizDto {
+            QuizId = q.QuizId, Title = q.Title, Description = q.Description, Duration = q.Duration,
+            ShowAnswersAfterSubmit = q.ShowAnswersAfterSubmit
         }).FirstOrDefaultAsync();
 
     public async Task<StartedQuizDto?> StartQuizAsync(int id, int userId)
@@ -38,6 +42,8 @@ public class QuizParticipationService(AppDbContext db) : IQuizParticipationServi
         var quiz = await db.Quizzes.AsNoTracking().Include(q => q.Questions)
             .ThenInclude(q => q.Answers).SingleOrDefaultAsync(q => q.QuizId == id);
         if (quiz is null) return null;
+        if (await db.QuizSubmissions.AnyAsync(s => s.QuizId == id && s.UserId == userId))
+            throw new BusinessRuleException("Bạn đã nộp bài này. Mỗi học viên chỉ được nộp một lần cho mỗi đề.");
         if (!IsReadyQuiz(quiz))
             throw new BusinessRuleException("Đề chưa có câu hỏi hoặc đáp án hợp lệ. Vui lòng liên hệ Trainer.");
         var now = DateTime.UtcNow;
@@ -61,13 +67,15 @@ public class QuizParticipationService(AppDbContext db) : IQuizParticipationServi
     public async Task<SubmissionDto?> SubmitQuizAsync(int quizId, int userId, SubmitQuizDto dto)
     {
         // The conditional update below claims this attempt exactly once, even for concurrent requests.
-        await using var transaction = await db.Database.BeginTransactionAsync();
+        await using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         var attempt = await db.QuizAttempts.AsNoTracking().SingleOrDefaultAsync(a =>
             a.Id == dto.AttemptId && a.QuizId == quizId && a.UserId == userId);
         if (attempt is null) return null;
         var now = DateTime.UtcNow;
         if (attempt.SubmittedAt != null) throw new BusinessRuleException("Bài này đã được nộp.");
         if (attempt.ExpiresAt <= now) throw new BusinessRuleException("Đã hết thời gian làm bài.");
+        if (await db.QuizSubmissions.AnyAsync(s => s.QuizId == quizId && s.UserId == userId))
+            throw new BusinessRuleException("Bạn đã nộp bài này. Mỗi học viên chỉ được nộp một lần cho mỗi đề.");
         var quiz = await db.Quizzes.Include(q => q.Questions).ThenInclude(q => q.Answers)
             .SingleAsync(q => q.QuizId == quizId);
         if (dto.Answers.Count != quiz.Questions.Count ||
@@ -114,16 +122,35 @@ public class QuizParticipationService(AppDbContext db) : IQuizParticipationServi
         var query = db.QuizSubmissions.AsNoTracking();
         if (userId.HasValue) query = query.Where(s => s.UserId == userId);
         if (quizId.HasValue) query = query.Where(s => s.QuizId == quizId);
-        var rows = await query.Include(s => s.Quiz).Include(s => s.User)
+        var rows = await query.Include(s => s.Quiz).ThenInclude(q => q!.Questions).ThenInclude(q => q.Answers)
+            .Include(s => s.User)
             .Include(s => s.SubmissionAnswers).ThenInclude(a => a.Question)
             .Include(s => s.SubmissionAnswers).ThenInclude(a => a.Answer)
-            .OrderByDescending(s => s.SubmittedAt).ToListAsync();
-        return rows.Select(s => new SubmissionDto(s.QuizSubmissionId, s.QuizId, s.Quiz!.Title,
-            s.User?.DisplayName, Utc(s.SubmittedAt),
-            s.SubmissionAnswers.GroupBy(a => a.QuestionId).Select(g => new SubmittedResponseDto(
-                g.Key, g.First().Question!.Content,
-                g.Where(a => a.Answer != null).Select(a => a.Answer!.Content).ToList(),
-                g.FirstOrDefault(a => a.ResponseText != null)?.ResponseText)).ToList())).ToList();
+            .AsSplitQuery().OrderByDescending(s => s.SubmittedAt).ToListAsync();
+        return rows.Select(s =>
+        {
+            var questions = s.Quiz!.Questions.ToDictionary(q => q.QuestionId);
+            var choiceQuestions = questions.Values.Where(q => IsChoice(q.QuestionType)).ToList();
+            var correct = choiceQuestions.Count(q =>
+            {
+                var selected = s.SubmissionAnswers.Where(a => a.QuestionId == q.QuestionId && a.AnswerId.HasValue)
+                    .Select(a => a.AnswerId!.Value).ToHashSet();
+                return selected.SetEquals(q.Answers.Where(a => a.IsCorrect).Select(a => a.AnswerId));
+            });
+            var reveal = !userId.HasValue || s.Quiz.ShowAnswersAfterSubmit;
+            var answers = s.SubmissionAnswers.GroupBy(a => a.QuestionId).Select(g =>
+            {
+                var question = questions[g.Key];
+                return new SubmittedResponseDto(g.Key, question.Content,
+                    g.Where(a => a.Answer != null).Select(a => a.Answer!.Content).ToList(),
+                    g.FirstOrDefault(a => a.ResponseText != null)?.ResponseText,
+                    reveal && IsChoice(question.QuestionType)
+                        ? question.Answers.Where(a => a.IsCorrect).Select(a => a.Content).ToList() : null);
+            }).ToList();
+            return new SubmissionDto(s.QuizSubmissionId, s.QuizId, s.Quiz.Title,
+                s.User?.DisplayName, Utc(s.SubmittedAt), answers, correct,
+                choiceQuestions.Count, questions.Count - choiceQuestions.Count, reveal);
+        }).ToList();
     }
 
     private static bool IsChoice(QuestionType type) => type is QuestionType.MultipleChoice or

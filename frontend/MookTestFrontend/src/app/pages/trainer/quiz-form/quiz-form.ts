@@ -9,14 +9,15 @@ export class QuizFormComponent implements OnInit {
   private readonly service = inject(QuizService);
   private readonly router = inject(Router);
   readonly id = Number(inject(ActivatedRoute).snapshot.paramMap.get('id')) || null;
-  readonly draft = signal({ title: '', description: '', duration: 30 });
+  readonly draft = signal({ title: '', description: '', duration: 30, showAnswersAfterSubmit: false });
   readonly busy = signal(false);
   readonly error = signal('');
   ngOnInit() {
     if (this.id) {
       this.busy.set(true);
       this.service.getQuizById(this.id).subscribe({
-        next: q => { this.draft.set({ title: q.title, description: q.description ?? '', duration: q.duration }); this.busy.set(false); },
+        next: q => { this.draft.set({ title: q.title, description: q.description ?? '', duration: q.duration,
+          showAnswersAfterSubmit: q.showAnswersAfterSubmit }); this.busy.set(false); },
         error: e => { this.error.set(apiError(e)); this.busy.set(false); }
       });
     }

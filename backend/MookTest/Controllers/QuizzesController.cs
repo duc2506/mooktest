@@ -3,6 +3,10 @@ using MookTest.Model;
 using Microsoft.AspNetCore.Mvc;
 using MookTest.DTO;
 using MookTest.Services.Interfaces;
+using MookTest.Data;
+using MookTest.Services;
+using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 
 namespace MookTest.Controllers
@@ -16,6 +20,46 @@ namespace MookTest.Controllers
         public QuizzesController(IQuizService quizService)
         {
             _quizService = quizService;
+        }
+
+        [HttpGet("question-import-template")]
+        public IActionResult QuestionImportTemplate() => File(
+            ExcelQuestionImport.CreateTemplate(),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "mooktest-questions-template.xlsx");
+
+        [HttpPost("{quizId:int}/questions/import-excel")]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(ExcelQuestionImport.MaxFileBytes + 1024 * 1024)]
+        public async Task<IActionResult> ImportExcel(int quizId, IFormFile file, [FromServices] AppDbContext db)
+        {
+            if (file is null || file.Length == 0 || file.Length > ExcelQuestionImport.MaxFileBytes ||
+                !string.Equals(Path.GetExtension(file.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "Chọn file .xlsx không quá 5 MB." });
+
+            List<Question> questions;
+            try
+            {
+                using var stream = file.OpenReadStream();
+                questions = ExcelQuestionImport.Parse(stream);
+            }
+            catch (ArgumentException error)
+            {
+                return BadRequest(new { message = error.Message });
+            }
+
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            if (!await db.Quizzes.AnyAsync(q => q.QuizId == quizId))
+                return NotFound(new { message = "Không tìm thấy đề kiểm tra." });
+            if (await db.QuizAttempts.AnyAsync(a => a.QuizId == quizId) ||
+                await db.QuizSubmissions.AnyAsync(s => s.QuizId == quizId))
+                throw new BusinessRuleException("Đề đã có lượt làm bài. Hãy tạo đề mới để bảo toàn bài làm cũ.");
+
+            foreach (var question in questions) question.QuizId = quizId;
+            db.Questions.AddRange(questions);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Ok(new { imported = questions.Count });
         }
 
         [HttpGet("{quizId:int}/submissions")]

@@ -9,6 +9,7 @@ namespace MookTest.DTO
         public string? Description { get; set; }
         [Range(1, 10080)]
         public int Duration { get; set; }
+        public bool ShowAnswersAfterSubmit { get; set; }
     }
 }
 

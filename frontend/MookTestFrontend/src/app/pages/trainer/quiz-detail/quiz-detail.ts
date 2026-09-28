@@ -16,6 +16,8 @@ export class QuizDetailComponent implements OnInit {
   readonly error = signal('');
   readonly success = signal('');
   readonly busy = signal(false);
+  readonly excelFile = signal<File | null>(null);
+  readonly templateBusy = signal(false);
   readonly types = questionTypes;
   readonly isChoice = isChoiceQuestion;
   readonly showBank = signal(false);
@@ -39,6 +41,39 @@ export class QuizDetailComponent implements OnInit {
     this.service.getQuizById(this.id).subscribe({ next: q => this.quiz.set(q), error: e => this.error.set(apiError(e)) });
   }
   typeName(type: QuestionType) { return this.types.find(t => t.value === type)?.label; }
+  selectExcel(input: HTMLInputElement) {
+    const file = input.files?.[0] ?? null;
+    if (file && (!file.name.toLowerCase().endsWith('.xlsx') || file.size > 5 * 1024 * 1024)) {
+      this.error.set('Chọn file .xlsx không quá 5 MB.'); input.value = ''; this.excelFile.set(null); return;
+    }
+    this.error.set(''); this.excelFile.set(file);
+  }
+  downloadExcelTemplate() {
+    if (this.templateBusy()) return;
+    this.templateBusy.set(true);
+    this.service.getQuestionImportTemplate().subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = 'mooktest-questions-template.xlsx'; link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.templateBusy.set(false);
+      },
+      error: e => { this.templateBusy.set(false); this.error.set(apiError(e)); }
+    });
+  }
+  uploadExcel(input: HTMLInputElement) {
+    const file = this.excelFile();
+    if (!file || this.busy()) return;
+    this.busy.set(true); this.error.set(''); this.success.set('');
+    this.service.importQuestionsFromExcel(this.id, file).subscribe({
+      next: result => {
+        this.busy.set(false); input.value = ''; this.excelFile.set(null);
+        this.success.set(`Đã nhập ${result.imported} câu hỏi từ Excel.`); this.load();
+      },
+      error: e => { this.busy.set(false); this.error.set(apiError(e)); }
+    });
+  }
   toggleBank() {
     this.showBank.update(value => !value);
     if (this.bankLoaded || !this.showBank()) return;

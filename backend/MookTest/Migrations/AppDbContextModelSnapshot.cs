@@ -134,6 +134,9 @@ namespace MookTest.Migrations
                     b.Property<int>("Duration")
                         .HasColumnType("int");
 
+                    b.Property<bool>("ShowAnswersAfterSubmit")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -202,7 +205,7 @@ namespace MookTest.Migrations
 
                     b.HasIndex("QuizId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "QuizId");
 
                     b.ToTable("QuizSubmissions");
                 });

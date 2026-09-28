@@ -2,8 +2,8 @@
 namespace MookTest.Services.Interfaces;
 public interface IQuizParticipationService
 {
-    Task<List<QuizDto>> GetAvailableQuizzesAsync();
-    Task<QuizDto?> GetQuizDetailsAsync(int id);
+    Task<List<QuizDto>> GetAvailableQuizzesAsync(int userId);
+    Task<QuizDto?> GetQuizDetailsAsync(int id, int userId);
     Task<StartedQuizDto?> StartQuizAsync(int id, int userId);
     Task<SubmissionDto?> SubmitQuizAsync(int quizId, int userId, SubmitQuizDto dto);
     Task<List<SubmissionDto>> GetSubmissionsAsync(int? userId, int? quizId = null);

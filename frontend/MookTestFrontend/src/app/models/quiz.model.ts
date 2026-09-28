@@ -15,9 +15,9 @@ export const isChoiceQuestion = (type: QuestionType) =>
 export interface Answer { answerId: number; content: string; isCorrect?: boolean; }
 export interface Question { questionId: number; bankQuestionId?: number | null; content: string; questionType: QuestionType; answers: Answer[]; }
 export interface BankQuestionRequest { content: string; questionType: QuestionType; answers: CreateAnswerRequest[]; }
-export interface Quiz { quizId: number; title: string; description: string | null; duration: number; questions: Question[]; }
+export interface Quiz { quizId: number; title: string; description: string | null; duration: number; showAnswersAfterSubmit: boolean; questions: Question[]; }
 export interface StartedQuiz extends Quiz { attemptId: string; startedAt: string; expiresAt: string; }
-export interface CreateQuizRequest { title: string; description: string | null; duration: number; }
+export interface CreateQuizRequest { title: string; description: string | null; duration: number; showAnswersAfterSubmit: boolean; }
 export type UpdateQuizRequest = CreateQuizRequest;
 export interface CreateQuestionRequest { content: string; questionType: QuestionType; }
 export interface CreateAnswerRequest { content: string; isCorrect: boolean; }
@@ -25,6 +25,8 @@ export interface SubmitAnswer { questionId: number; answerIds: number[]; respons
 export interface SubmitQuizRequest { attemptId: string; answers: SubmitAnswer[]; }
 export interface Submission {
   quizSubmissionId: number; quizId: number; title: string; traineeName: string | null; submittedAt: string;
-  answers: { questionId: number; content: string; selectedAnswers: string[]; responseText: string | null }[];
+  correctChoices: number; totalChoices: number; unscoredTextQuestions: number; showCorrectAnswers: boolean;
+  answers: { questionId: number; content: string; selectedAnswers: string[]; responseText: string | null;
+    correctAnswers: string[] | null }[];
 }
 

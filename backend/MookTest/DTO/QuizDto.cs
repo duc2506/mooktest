@@ -7,6 +7,7 @@
         public string? Description { get; set; }
 
         public int Duration { get; set; }
+        public bool ShowAnswersAfterSubmit { get; set; }
         public List<QuestionDto> Questions { get; set; } = new();
     }
 }
