@@ -1,5 +1,6 @@
 ﻿import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { AuthService, AuthResponse } from './auth.service';
@@ -15,7 +16,7 @@ describe('JWT session, interceptor and guards', () => {
   beforeEach(() => {
     sessionStorage.clear();
     TestBed.configureTestingModule({ providers: [
-      provideRouter([]), provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting()
+      provideZonelessChangeDetection(), provideRouter([]), provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting()
     ] });
     http = TestBed.inject(HttpTestingController);
     auth = TestBed.inject(AuthService);
