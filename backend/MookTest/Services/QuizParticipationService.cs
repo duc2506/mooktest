@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MookTest.Data;
+using System.Linq.Expressions;
 using MookTest.DTO;
 using MookTest.Enums;
 using MookTest.Model;
@@ -8,13 +9,26 @@ using MookTest.Services.Interfaces;
 namespace MookTest.Services;
 public class QuizParticipationService(AppDbContext db) : IQuizParticipationService
 {
+    // Keep the catalog, preview and start action in agreement about which quizzes can be taken.
+    private static readonly Expression<Func<Quiz, bool>> ReadyQuiz = quiz =>
+        quiz.Questions.Any() && quiz.Questions.All(question =>
+            question.QuestionType != QuestionType.MultipleChoice &&
+            question.QuestionType != QuestionType.SingleChoice &&
+            question.QuestionType != QuestionType.TrueFalse ||
+            question.Answers.Count() >= 2 && question.Answers.Count(a => a.IsCorrect) >= 1 &&
+            (question.QuestionType == QuestionType.MultipleChoice ||
+             question.Answers.Count(a => a.IsCorrect) == 1) &&
+            (question.QuestionType != QuestionType.TrueFalse || question.Answers.Count() == 2));
+    private static readonly Func<Quiz, bool> IsReadyQuiz = ReadyQuiz.Compile();
+
     public Task<List<QuizDto>> GetAvailableQuizzesAsync() => db.Quizzes.AsNoTracking()
+        .Where(ReadyQuiz)
         .OrderByDescending(q => q.QuizId).Select(q => new QuizDto {
             QuizId = q.QuizId, Title = q.Title, Description = q.Description, Duration = q.Duration
         }).ToListAsync();
 
     public Task<QuizDto?> GetQuizDetailsAsync(int id) => db.Quizzes.AsNoTracking()
-        .Where(q => q.QuizId == id).Select(q => new QuizDto {
+        .Where(ReadyQuiz).Where(q => q.QuizId == id).Select(q => new QuizDto {
             QuizId = q.QuizId, Title = q.Title, Description = q.Description, Duration = q.Duration
         }).FirstOrDefaultAsync();
 
@@ -24,16 +38,8 @@ public class QuizParticipationService(AppDbContext db) : IQuizParticipationServi
         var quiz = await db.Quizzes.AsNoTracking().Include(q => q.Questions)
             .ThenInclude(q => q.Answers).SingleOrDefaultAsync(q => q.QuizId == id);
         if (quiz is null) return null;
-        if (quiz.Questions.Count == 0) throw new BusinessRuleException("Đề chưa có câu hỏi.");
-        foreach (var question in quiz.Questions)
-        {
-            if (!IsChoice(question.QuestionType)) continue;
-            var correct = question.Answers.Count(a => a.IsCorrect);
-            if (question.Answers.Count < 2 || correct == 0 ||
-                (question.QuestionType != QuestionType.MultipleChoice && correct != 1) ||
-                (question.QuestionType == QuestionType.TrueFalse && question.Answers.Count != 2))
-                throw new BusinessRuleException("Đề chưa có đủ đáp án hợp lệ. Vui lòng liên hệ Trainer.");
-        }
+        if (!IsReadyQuiz(quiz))
+            throw new BusinessRuleException("Đề chưa có câu hỏi hoặc đáp án hợp lệ. Vui lòng liên hệ Trainer.");
         var now = DateTime.UtcNow;
         var attempt = await db.QuizAttempts.Where(a => a.QuizId == id && a.UserId == userId &&
             a.SubmittedAt == null && a.ExpiresAt > now).OrderByDescending(a => a.StartedAt).FirstOrDefaultAsync();
