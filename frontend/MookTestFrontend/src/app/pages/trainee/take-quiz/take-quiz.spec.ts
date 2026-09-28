@@ -2,7 +2,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { TakeQuizComponent } from './take-quiz';
 describe('Taking a quiz', () => {
   let http: HttpTestingController;
@@ -28,14 +28,15 @@ describe('Taking a quiz', () => {
     component.choose(1, 10, true, true);
     component.choose(1, 11, true, true);
     component.texts[2] = '  Written response  ';
-    spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
     component.submitQuiz();
     const submit = http.expectOne('/api/participation/quizzes/1/submit');
     expect(submit.request.body).toEqual({ attemptId: 'attempt-1', answers: [
       { questionId: 1, answerIds: [10, 11], responseText: null },
       { questionId: 2, answerIds: [], responseText: 'Written response' }
     ] });
-    submit.flush({});
+    submit.flush({ quizSubmissionId: 1, quizId: 1, title: 'Test', correctChoices: 1,
+      totalChoices: 1, unscoredTextQuestions: 1, showCorrectAnswers: false, answers: [] });
+    expect(component.submission()?.correctChoices).toBe(1);
     fixture.destroy();
   });
   it('prevents submitting incomplete responses', () => {

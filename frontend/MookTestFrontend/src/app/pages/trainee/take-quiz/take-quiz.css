@@ -62,7 +62,17 @@
 .submit-panel p { margin: 2px 0 0; font-size: 12px; }
 .submit-panel .btn { min-width: 160px; justify-content: space-between; gap: 14px; }
 .take-loading { padding: 64px 20px; border: 1px dashed #bdcde2; border-radius: 18px; background: #fff; color: #66809f; text-align: center; }
+.result-card { max-width: 720px; margin: 28px auto; padding: 42px; border: 1px solid #d5e2f4; border-radius: 20px; background: #fff; box-shadow: 0 12px 33px rgba(27,57,94,.08); text-align: center; }
+.result-eyebrow { color: #0d7965; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+.result-card h1 { margin: 12px 0 22px; }
+.result-score { margin: 0; color: #2458bd; font-size: clamp(52px, 9vw, 80px); font-weight: 800; line-height: 1; }
+.result-score small { font-size: 24px; }
+.result-card > p { line-height: 1.6; }
+.result-review { margin-top: 24px; text-align: left; }
+.result-review summary { cursor: pointer; font-weight: 700; }
+.result-review p { margin: 5px 0 0; }
+.result-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 25px; }
 .take-page .notice { margin: 16px 0; }
 @media (max-width: 950px) { .take-layout { grid-template-columns: minmax(0, 1fr) 230px; } .question-jump { grid-template-columns: repeat(4, 1fr); } }
-@media (max-width: 750px) { .take-header { align-items: flex-start; flex-direction: column; padding: 24px; } .timer-card { width: 100%; } .take-layout { display: flex; flex-direction: column-reverse; } .take-aside { position: static; display: block; width: 100%; } .aside-tip { display: none; } .progress-card { padding: 18px; } .question-jump { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); } .exam-question { padding: 22px 19px; } .submit-panel { padding: 18px; } .submit-panel .btn { width: 100%; } }
+@media (max-width: 750px) { .take-header { align-items: flex-start; flex-direction: column; padding: 24px; } .timer-card { width: 100%; } .take-layout { display: flex; flex-direction: column-reverse; } .take-aside { position: static; display: block; width: 100%; } .aside-tip { display: none; } .progress-card { padding: 18px; } .question-jump { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); } .exam-question { padding: 22px 19px; } .submit-panel { padding: 18px; } .submit-panel .btn { width: 100%; } .result-card { padding: 28px 20px; } }
 @media (prefers-reduced-motion: reduce) { .answer-option, .progress-track span { transition: none; } }

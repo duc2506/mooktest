@@ -1,6 +1,33 @@
 <section class="page-container take-page">
   <a class="back-link" routerLink="/trainee/quizzes"><span aria-hidden="true">←</span> Danh sách đề</a>
-  @if (quiz(); as q) {
+  @if (submission(); as result) {
+    <div class="result-card" role="status" aria-live="polite">
+      <span class="result-eyebrow">ĐÃ NỘP BÀI THÀNH CÔNG</span>
+      <h1>{{ result.title }}</h1>
+      @if (result.totalChoices > 0) {
+        <p class="result-score">{{ (10 * result.correctChoices / result.totalChoices).toFixed(1) }}<small>/10</small></p>
+        <p>Điểm trắc nghiệm · Đúng {{ result.correctChoices }}/{{ result.totalChoices }} câu.</p>
+      } @else {
+        <p>Đề này không có câu trắc nghiệm để chấm tự động.</p>
+      }
+      @if (result.unscoredTextQuestions > 0) {
+        <p>{{ result.unscoredTextQuestions }} câu trả lời văn bản chưa được chấm; điểm trên chỉ tính phần trắc nghiệm.</p>
+      }
+      @if (result.showCorrectAnswers) {
+        <details class="result-review"><summary>Xem đáp án đúng</summary>
+          @for (answer of result.answers; track answer.questionId) {
+            @if (answer.correctAnswers?.length) {
+              <div><strong>{{ answer.content }}</strong><p>Đáp án đúng: {{ answer.correctAnswers!.join(', ') }}</p></div>
+            }
+          }
+        </details>
+      } @else { <p>Trainer chưa cho phép xem đáp án đúng.</p> }
+      <div class="result-actions">
+        <a class="btn btn-primary" routerLink="/trainee/submissions">Xem lịch sử và điểm</a>
+        <a class="btn" routerLink="/trainee/quizzes">Danh sách đề</a>
+      </div>
+    </div>
+  } @else if (quiz(); as q) {
     <div class="take-header">
       <div><span class="take-eyebrow">BÀI KIỂM TRA ĐANG DIỄN RA</span>
         <h1>{{ q.title }}</h1><p>{{ q.description || 'Hãy đọc kỹ từng câu hỏi và chọn đáp án phù hợp.' }}</p>

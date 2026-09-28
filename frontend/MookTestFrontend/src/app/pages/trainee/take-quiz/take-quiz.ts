@@ -1,8 +1,9 @@
 ﻿import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { computed } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Question, QuestionType, StartedQuiz, SubmitAnswer, isChoiceQuestion } from '../../../models/quiz.model';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Question, QuestionType, StartedQuiz, Submission, SubmitAnswer, isChoiceQuestion } from '../../../models/quiz.model';
 import { QuizService } from '../../../services/quiz.service';
 import { AuthService } from '../../../services/auth.service';
 import { apiError } from '../../../services/api-error';
@@ -10,9 +11,9 @@ import { apiError } from '../../../services/api-error';
 export class TakeQuizComponent implements OnInit, OnDestroy {
   private readonly service = inject(QuizService);
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly id = Number(inject(ActivatedRoute).snapshot.paramMap.get('id'));
   readonly quiz = signal<StartedQuiz | null>(null);
+  readonly submission = signal<Submission | null>(null);
   readonly error = signal('');
   readonly busy = signal(false);
   readonly remaining = signal(0);
@@ -43,7 +44,18 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
         } catch { /* Start with empty answers if unavailable. */ }
         this.tick(); this.timer = setInterval(() => this.tick(), 1000);
       },
-      error: e => this.error.set(apiError(e))
+      error: e => {
+        if (e instanceof HttpErrorResponse && e.status === 409) {
+          this.service.getSubmissions().subscribe({
+            next: data => {
+              const submitted = data.find(item => item.quizId === this.id);
+              if (submitted) this.submission.set(submitted);
+              else this.error.set(apiError(e));
+            },
+            error: error => this.error.set(apiError(error))
+          });
+        } else this.error.set(apiError(e));
+      }
     });
   }
   ngOnDestroy() { clearInterval(this.timer); }
@@ -80,9 +92,11 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
     }
     this.busy.set(true); this.error.set('');
     this.service.submitQuiz(quiz.quizId, { attemptId: quiz.attemptId, answers }).subscribe({
-      next: () => {
+      next: result => {
         try { sessionStorage.removeItem(this.draftKey); } catch { /* Optional draft. */ }
-        this.busy.set(false); void this.router.navigate(['/trainee/submissions']);
+        clearInterval(this.timer);
+        this.busy.set(false);
+        this.submission.set(result);
       },
       error: e => { this.busy.set(false); this.error.set(apiError(e)); }
     });
