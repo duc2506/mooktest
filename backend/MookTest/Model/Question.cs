@@ -7,8 +7,9 @@ namespace MookTest.Model
     {
         [Key]
         public int QuestionId { get; set; }
-        [Required]
-        public int QuizId { get; set; }
+        public int? QuizId { get; set; }
+        public bool IsBankItem { get; set; }
+        public int? BankQuestionId { get; set; }
         [ForeignKey(nameof(QuizId))]
         public Quiz? Quiz { get; set; }
         [Required]

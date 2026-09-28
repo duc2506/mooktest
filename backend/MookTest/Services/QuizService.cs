@@ -55,14 +55,15 @@ namespace MookTest.Services
                     Description = q.Description,
                     Duration = q.Duration,
 
-                    Questions = q.Questions
+                    Questions = q.Questions.OrderBy(question => question.QuestionId)
                         .Select(question => new QuestionDto
                         {
                             QuestionId = question.QuestionId,
+                            BankQuestionId = question.BankQuestionId,
                             Content = question.Content,
                             QuestionType = question.QuestionType,
 
-                            Answers = question.Answers
+                            Answers = question.Answers.OrderBy(answer => answer.AnswerId)
                                 .Select(answer => new AnswerDto
                                 {
                                     AnswerId = answer.AnswerId,

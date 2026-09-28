@@ -34,6 +34,10 @@ namespace MookTest.Data
                 .WithMany(q => q.Questions)
                 .HasForeignKey(q => q.QuizId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Question>()
+                .HasIndex(q => new { q.QuizId, q.BankQuestionId })
+                .IsUnique()
+                .HasFilter("[QuizId] IS NOT NULL AND [BankQuestionId] IS NOT NULL");
 
             // Quiz 1 - N QuizSubmission
             modelBuilder.Entity<QuizSubmission>()
