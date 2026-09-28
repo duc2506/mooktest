@@ -1,0 +1,55 @@
+<section class="page-container trainee-catalog">
+  <div class="catalog-hero">
+    <div class="catalog-hero-copy">
+      <span class="catalog-eyebrow"><span class="eyebrow-dot"></span> KHÔNG GIAN HỌC VIÊN</span>
+      <h1>Chọn bài kiểm tra<br>phù hợp với bạn.</h1>
+      <p>Khám phá các đề đang có, xem thông tin trước khi bắt đầu và hoàn thành bài làm theo tốc độ của bạn.</p>
+      <div class="hero-metrics"><span><strong>{{ quizzes().length }}</strong><small>đề kiểm tra</small></span>
+        <span class="metric-divider" aria-hidden="true"></span>
+        <span><strong>01</strong><small>bước để bắt đầu</small></span></div>
+    </div>
+    <div class="hero-art" aria-hidden="true"><span class="art-orbit"></span><div class="art-sheet">
+      <span class="art-pill"></span><span class="art-line long"></span><span class="art-line"></span>
+      <span class="art-option"><i></i></span><span class="art-option active"><i></i></span><span class="art-option"><i></i></span>
+      <span class="art-footer">MOOKTEST <b>✓</b></span>
+    </div></div>
+  </div>
+
+  <div class="catalog-toolbar">
+    <div><span class="section-kicker">KHÁM PHÁ</span><h2>Danh sách đề kiểm tra</h2>
+      <p>Chọn một đề để xem thời gian và bắt đầu làm bài.</p></div>
+    <label class="catalog-search"><span class="search-icon" aria-hidden="true">⌕</span>
+      <span class="sr-only">Tìm đề kiểm tra</span>
+      <input type="search" placeholder="Tìm đề kiểm tra..." [value]="search()" (input)="search.set($any($event.target).value)"></label>
+  </div>
+
+  @if (error()) { <p class="error notice" role="alert">{{ error() }}</p> }
+  @if (loading()) { <div class="catalog-empty" role="status">Đang tải danh sách đề kiểm tra…</div> }
+  @else {
+    <div class="catalog-grid">
+      @for (quiz of filtered(); track quiz.quizId; let i = $index) {
+        <article class="catalog-card" [class.is-open]="selectedId() === quiz.quizId">
+          <div class="catalog-card-top"><span class="quiz-symbol" aria-hidden="true">{{ (i + 1).toString().padStart(2, '0') }}</span>
+            <span class="time-badge">◷ {{ quiz.duration }} phút</span></div>
+          <span class="card-overline">BÀI KIỂM TRA</span>
+          <h3>{{ quiz.title }}</h3>
+          <p class="catalog-description">{{ quiz.description || 'Một bài kiểm tra để bạn ôn luyện và đánh giá kiến thức của mình.' }}</p>
+          <div class="catalog-card-actions"><button class="btn" type="button" (click)="details(quiz.quizId)" [attr.aria-expanded]="selectedId() === quiz.quizId">
+            {{ selectedId() === quiz.quizId ? 'Thu gọn' : 'Xem thông tin đề' }} <span aria-hidden="true">↗</span></button></div>
+          @if (selectedId() === quiz.quizId) {
+            <div class="quiz-preview">
+              @if (detailsLoading()) { <p role="status">Đang tải thông tin đề…</p> }
+              @if (selected(); as detail) {
+                <p>{{ detail.description || 'Bạn đã sẵn sàng bắt đầu bài kiểm tra này.' }}</p>
+                <div class="preview-note"><span aria-hidden="true">◷</span><span>Bài làm kéo dài <strong>{{ detail.duration }} phút</strong>. Đồng hồ bắt đầu khi bạn mở bài; tải lại trang sẽ tiếp tục lượt đang làm.</span></div>
+                <a class="btn btn-primary" [routerLink]="['/trainee/quizzes', detail.quizId, 'take']">Bắt đầu / Tiếp tục <span aria-hidden="true">→</span></a>
+              }
+            </div>
+          }
+        </article>
+      } @empty { <div class="catalog-empty"><span class="empty-mark" aria-hidden="true">⌕</span>
+        <h3>{{ search() ? 'Không tìm thấy đề phù hợp' : 'Chưa có đề kiểm tra' }}</h3>
+        <p>{{ search() ? 'Thử từ khóa khác để tiếp tục khám phá.' : 'Các đề mới sẽ xuất hiện tại đây khi được tạo.' }}</p></div> }
+    </div>
+  }
+</section>

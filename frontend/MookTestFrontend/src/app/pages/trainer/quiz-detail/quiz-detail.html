@@ -1,0 +1,63 @@
+﻿<section class="page-container">
+  @if (error()) { <p role="alert" class="error">{{ error() }}</p> }
+  @if (success()) { <p role="status" class="success notice">{{ success() }}</p> }
+  @if (quiz(); as q) {
+    <div class="page-header"><div><h1>{{ q.title }}</h1><p>{{ q.description }}</p><strong>{{ q.duration }} phút</strong></div>
+      <a class="btn" routerLink="/trainer/quizzes">Quay lại</a></div>
+    <p>Đề có lượt làm bài sẽ được khóa chỉnh sửa để giữ nguyên nội dung bài làm.</p>
+    <div class="bank-picker-heading"><div><h2>Chọn câu từ ngân hàng</h2><p>Lấy cả câu hỏi và đáp án vào đề. Bản sao trong đề có thể chỉnh sửa riêng.</p></div>
+      <button class="btn btn-primary" type="button" (click)="toggleBank()">{{ showBank() ? 'Đóng ngân hàng' : 'Chọn câu hỏi' }}</button></div>
+    @if (showBank()) {
+      <div class="form-card bank-picker">
+        <label class="search-field"><span class="sr-only">Tìm câu trong ngân hàng</span>
+          <input type="search" placeholder="Tìm nội dung câu hỏi..." [value]="bankSearch()" (input)="bankSearch.set($any($event.target).value)"></label>
+        @if (bankLoading()) { <p role="status">Đang tải ngân hàng câu hỏi…</p> }
+        @else {
+          <div class="bank-picker-list">
+            @for (item of availableBankQuestions(); track item.questionId) {
+              <label class="bank-picker-item"><input type="checkbox" [checked]="selectedBankIds().includes(item.questionId)" (change)="toggleBankSelection(item.questionId, $any($event.target).checked)">
+                <span><strong>{{ item.content }}</strong><small>{{ typeName(item.questionType) }} · {{ item.answers.length }} đáp án</small></span></label>
+            } @empty { <p class="empty">{{ bankSearch() ? 'Không tìm thấy câu hỏi phù hợp.' : 'Chưa có câu nào có thể thêm. Hãy tạo câu trong ngân hàng trước.' }}</p> }
+          </div>
+          <div class="form-actions"><a class="btn" routerLink="/trainer/question-bank">Mở ngân hàng câu hỏi</a>
+            <button class="btn btn-primary" type="button" [disabled]="busy() || !selectedBankIds().length" (click)="importFromBank()">Thêm {{ selectedBankIds().length }} câu vào đề</button></div>
+        }
+      </div>
+    }
+    <h2>{{ questionId ? 'Sửa câu hỏi trong đề' : 'Hoặc thêm câu hỏi riêng cho đề' }}</h2>
+    <form class="form-inline" (ngSubmit)="saveQuestion()">
+      <input name="content" aria-label="Nội dung câu hỏi" [(ngModel)]="questionContent" required placeholder="Nội dung câu hỏi">
+      <select name="type" aria-label="Loại câu hỏi" [(ngModel)]="questionType">
+        @for (type of types; track type.value) { <option [ngValue]="type.value">{{ type.label }}</option> }
+      </select>
+      <button class="btn btn-primary" [disabled]="busy()">Lưu câu hỏi</button>
+      @if (questionId) { <button type="button" class="btn" (click)="resetQuestion()">Hủy sửa</button> }
+    </form>
+    @for (question of q.questions; track question.questionId; let i = $index) {
+      <article class="question-card">
+        <div class="question-header"><strong>Câu {{ i + 1 }} · {{ typeName(question.questionType) }}</strong>
+          <div class="actions">@if (!question.bankQuestionId) { <button class="btn" [disabled]="busy()" (click)="saveToBank(question)">Lưu vào ngân hàng</button> }
+          <button class="btn" (click)="editQuestion(question)">Sửa</button>
+          <button class="btn btn-danger" [disabled]="busy()" (click)="deleteQuestion(question.questionId)">Xóa</button></div></div>
+        <p>{{ question.content }}</p>
+        @if (isChoice(question.questionType)) {
+          @for (answer of question.answers; track answer.answerId) {
+            <div class="answer-row"><span>{{ answer.content }} @if (answer.isCorrect) { <strong>✓ Đúng</strong> }</span>
+              <div class="actions"><button class="btn" (click)="editAnswer(question.questionId, answer)">Sửa</button>
+              <button class="btn btn-danger" [disabled]="busy()" (click)="deleteAnswer(question.questionId, answer.answerId)">Xóa</button></div></div>
+          }
+          <button class="btn" (click)="editAnswer(question.questionId)">Thêm đáp án</button>
+          @if (answerQuestionId === question.questionId) {
+            <form class="answer-form" (ngSubmit)="saveAnswer()">
+              <label>Nội dung đáp án<input name="answerContent" [(ngModel)]="answerContent" required></label>
+              <label class="choice"><input type="checkbox" name="correct" [(ngModel)]="answerCorrect">Đáp án đúng</label>
+              <button class="btn btn-primary" [disabled]="busy()">Lưu đáp án</button>
+              <button class="btn" type="button" (click)="answerQuestionId = null">Hủy</button>
+            </form>
+          }
+        } @else { <p>Học viên nhập câu trả lời bằng văn bản.</p> }
+      </article>
+    } @empty { <p class="empty">Chưa có câu hỏi.</p> }
+  } @else { <p role="status">Đang tải đề…</p> }
+</section>
+

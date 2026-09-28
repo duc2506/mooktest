@@ -1,0 +1,58 @@
+<section class="page-container trainer-page">
+  <div class="workspace-hero">
+    <div><span class="eyebrow">KHÔNG GIAN TRAINER</span><h1>Ngân hàng câu hỏi</h1>
+      <p>Lưu câu hỏi để dùng lại trong nhiều đề. Mỗi lần đưa vào đề, hệ thống tạo một bản sao độc lập.</p></div>
+  </div>
+
+  @if (error()) { <p class="error notice" role="alert">{{ error() }}</p> }
+  @if (success()) { <p class="success notice" role="status">{{ success() }}</p> }
+  <div class="bank-layout">
+    <form class="form-card bank-editor" (ngSubmit)="save()" #bankForm="ngForm">
+      <h2>{{ editingId === null ? 'Thêm câu hỏi' : 'Sửa câu hỏi' }}</h2>
+      <div class="form-group"><label for="bank-content">Nội dung câu hỏi</label>
+        <textarea id="bank-content" name="content" [(ngModel)]="content" rows="4" maxlength="10000" required placeholder="Nhập nội dung câu hỏi..."></textarea></div>
+      <div class="form-group"><label for="bank-type">Loại câu hỏi</label>
+        <select id="bank-type" name="questionType" [ngModel]="questionType" (ngModelChange)="changeType($event)">
+          @for (type of types; track type.value) { <option [ngValue]="type.value">{{ type.label }}</option> }
+        </select></div>
+      @if (isChoice(questionType)) {
+        <div class="bank-answer-heading"><strong>Đáp án</strong><span>Đánh dấu đáp án đúng</span></div>
+        @for (answer of answers; track $index; let i = $index) {
+          <div class="bank-answer-input">
+            <input type="checkbox" [checked]="answer.isCorrect" (change)="setCorrect(i, $any($event.target).checked)" [attr.aria-label]="'Đáp án ' + (i + 1) + ' đúng'">
+            <input [name]="'answer-' + i" [(ngModel)]="answer.content" required maxlength="1000" [placeholder]="'Đáp án ' + (i + 1)">
+            @if (answers.length > 2) { <button class="btn btn-danger" type="button" (click)="removeAnswer(i)" [attr.aria-label]="'Xóa đáp án ' + (i + 1)">×</button> }
+          </div>
+        }
+        @if (questionType !== trueFalseType && answers.length < 20) { <button class="btn" type="button" (click)="addAnswer()">+ Thêm đáp án</button> }
+      } @else { <p>Học viên sẽ nhập câu trả lời bằng văn bản.</p> }
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="busy() || bankForm.invalid">{{ busy() ? 'Đang lưu…' : (editingId === null ? 'Lưu vào ngân hàng' : 'Lưu thay đổi') }}</button>
+        @if (editingId !== null) { <button class="btn" type="button" (click)="reset()">Hủy</button> }
+      </div>
+    </form>
+
+    <div class="bank-list">
+      <div class="workspace-toolbar"><div><strong>Câu hỏi đã lưu</strong><span>{{ questions().length }} câu</span></div>
+        <label class="search-field"><span class="sr-only">Tìm câu hỏi</span>
+          <input type="search" placeholder="Tìm nội dung câu hỏi..." [value]="search()" (input)="search.set($any($event.target).value)"></label></div>
+      @if (loading()) { <div class="empty-panel" role="status">Đang tải câu hỏi…</div> }
+      @for (question of filtered(); track question.questionId) {
+        <article class="question-card bank-card">
+          <div class="question-header"><span class="duration-chip">{{ typeName(question.questionType) }}</span>
+            <div class="actions"><button class="btn" type="button" (click)="edit(question)">Sửa</button>
+              <button class="btn btn-danger" type="button" [disabled]="busy()" (click)="remove(question)">Xóa</button></div></div>
+          <h3>{{ question.content }}</h3>
+          @if (isChoice(question.questionType)) {
+            <ul class="bank-answer-list">@for (answer of question.answers; track answer.answerId) {
+              <li [class.is-correct]="answer.isCorrect">{{ answer.content }} @if (answer.isCorrect) { <strong>✓ Đúng</strong> }</li>
+            }</ul>
+          }
+        </article>
+      } @empty {
+        @if (!loading()) { <div class="empty-panel"><h2>{{ search() ? 'Không tìm thấy câu hỏi' : 'Ngân hàng đang trống' }}</h2>
+          <p>{{ search() ? 'Thử từ khóa khác.' : 'Dùng form bên trái để thêm câu hỏi đầu tiên.' }}</p></div> }
+      }
+    </div>
+  </div>
+</section>

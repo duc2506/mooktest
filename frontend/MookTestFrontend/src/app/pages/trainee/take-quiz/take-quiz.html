@@ -1,0 +1,70 @@
+<section class="page-container take-page">
+  <a class="back-link" routerLink="/trainee/quizzes"><span aria-hidden="true">←</span> Danh sách đề</a>
+  @if (quiz(); as q) {
+    <div class="take-header">
+      <div><span class="take-eyebrow">BÀI KIỂM TRA ĐANG DIỄN RA</span>
+        <h1>{{ q.title }}</h1><p>{{ q.description || 'Hãy đọc kỹ từng câu hỏi và chọn đáp án phù hợp.' }}</p>
+        <div class="take-meta"><span>◷ {{ q.duration }} phút</span><span>▦ {{ q.questions.length }} câu hỏi</span></div>
+      </div>
+      <div class="timer-card" [class.is-urgent]="remaining() <= 300" role="timer" aria-live="off">
+        <span>THỜI GIAN CÒN LẠI</span><strong>{{ clock }}</strong><small>{{ remaining() <= 300 ? 'Sắp hết giờ' : 'Tập trung làm bài nhé' }}</small>
+      </div>
+    </div>
+
+    @if (remaining() === 0) { <p class="error notice" role="alert">Đã hết thời gian. Bài chưa nộp sẽ không được lưu.</p> }
+    <div class="take-layout">
+      <div class="take-main">
+        <form (ngSubmit)="submitQuiz()">
+          <fieldset [disabled]="busy() || remaining() === 0">
+            @for (question of q.questions; track question.questionId; let i = $index) {
+              <article class="exam-question" [id]="'question-' + question.questionId" tabindex="-1">
+                <div class="exam-question-head"><span class="question-number">{{ (i + 1).toString().padStart(2, '0') }}</span>
+                  <div><span class="question-kicker">CÂU HỎI {{ i + 1 }} / {{ q.questions.length }}</span>
+                    <span class="question-status" [class.is-done]="isAnswered(question)">{{ isAnswered(question) ? 'Đã trả lời' : 'Chưa trả lời' }}</span></div></div>
+                <h2>{{ question.content }}</h2>
+                @if (isChoice(question.questionType)) {
+                  <p class="answer-hint">{{ question.questionType === types.MultipleChoice ? 'Chọn tất cả đáp án đúng.' : 'Chọn một đáp án.' }}</p>
+                  <div class="answer-options">
+                    @for (answer of question.answers; track answer.answerId) {
+                      <label class="answer-option" [class.is-selected]="(choices[question.questionId] || []).includes(answer.answerId)">
+                        <input [type]="question.questionType === types.MultipleChoice ? 'checkbox' : 'radio'"
+                          [name]="'q' + question.questionId"
+                          [checked]="(choices[question.questionId] || []).includes(answer.answerId)"
+                          (change)="choose(question.questionId, answer.answerId, question.questionType === types.MultipleChoice, $any($event.target).checked)">
+                        <span>{{ answer.content }}</span>
+                      </label>
+                    }
+                  </div>
+                } @else {
+                  <label class="answer-hint" [for]="'text' + question.questionId">Câu trả lời của bạn</label>
+                  <textarea class="written-answer" [id]="'text' + question.questionId" [name]="'text' + question.questionId"
+                    [(ngModel)]="texts[question.questionId]" (ngModelChange)="saveDraft()" maxlength="10000" rows="5" placeholder="Nhập câu trả lời tại đây..."></textarea>
+                }
+              </article>
+            }
+            <div class="submit-panel"><div><span class="submit-check" aria-hidden="true">✓</span>
+                <div><strong>Sẵn sàng nộp bài?</strong><p>Đã trả lời {{ answeredCount() }}/{{ q.questions.length }} câu hỏi. Kiểm tra lại trước khi nộp.</p></div></div>
+              <button class="btn btn-primary" type="submit" [disabled]="busy() || remaining() === 0">{{ busy() ? 'Đang nộp…' : 'Nộp bài' }} <span aria-hidden="true">→</span></button></div>
+            @if (error()) { <p class="error notice" role="alert">{{ error() }}</p> }
+          </fieldset>
+        </form>
+      </div>
+      <aside class="take-aside" aria-label="Tiến độ làm bài">
+        <div class="progress-card"><span class="aside-kicker">TIẾN ĐỘ CỦA BẠN</span>
+          <div class="progress-count"><strong>{{ answeredCount() }}/{{ q.questions.length }}</strong><span>câu đã trả lời</span></div>
+          <div class="progress-track" role="progressbar" [attr.aria-valuenow]="answeredCount()" [attr.aria-valuemax]="q.questions.length" aria-valuemin="0" aria-label="Số câu đã trả lời">
+            <span [style.width.%]="progressPercent()"></span></div>
+          <p>Chọn số câu để chuyển nhanh đến câu hỏi.</p>
+          <div class="question-jump">@for (question of q.questions; track question.questionId; let i = $index) {
+            <button type="button" [class.is-done]="isAnswered(question)" (click)="goToQuestion(question.questionId)" [attr.aria-label]="'Đến câu ' + (i + 1) + (isAnswered(question) ? ', đã trả lời' : ', chưa trả lời')">{{ i + 1 }}</button>
+          }</div>
+          <div class="progress-legend"><span><i class="legend-done"></i>Đã trả lời</span><span><i></i>Chưa trả lời</span></div>
+        </div>
+        <div class="aside-tip"><span aria-hidden="true">✦</span><p>Câu trả lời được lưu tạm trong tab hiện tại. Thời gian vẫn tiếp tục chạy khi bạn rời trang.</p></div>
+      </aside>
+    </div>
+  } @else {
+    @if (error()) { <p class="error notice" role="alert">{{ error() }}</p> }
+    @else { <div class="take-loading" role="status">Đang chuẩn bị bài kiểm tra…</div> }
+  }
+</section>

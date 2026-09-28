@@ -1,0 +1,51 @@
+<section class="page-container trainer-page">
+  <div class="workspace-hero">
+    <div>
+      <span class="eyebrow">KHÔNG GIAN TRAINER</span>
+      <h1>Quản lý người dùng</h1>
+      <p>Thêm học viên và cập nhật thông tin tài khoản nhanh chóng.</p>
+    </div>
+  </div>
+
+  @if (error()) { <p class="error notice" role="alert">{{ error() }}</p> }
+  <div class="user-layout">
+    <form class="form-card user-form" (ngSubmit)="save()" #userForm="ngForm">
+      <h2>{{ editing !== null ? 'Cập nhật học viên' : 'Thêm học viên' }}</h2>
+      <p>{{ editing !== null ? 'Chỉnh sửa tên hoặc email của học viên.' : 'Tạo tài khoản mới cho học viên.' }}</p>
+      <div class="form-group">
+        <label for="student-name">Họ và tên</label>
+        <input id="student-name" name="displayName" [(ngModel)]="displayName" required minlength="2" maxlength="100" placeholder="Ví dụ: Nguyễn Văn An" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label for="student-email">Email</label>
+        <input id="student-email" name="email" type="email" [(ngModel)]="email" required email maxlength="254" placeholder="hocvien@example.com" autocomplete="email">
+      </div>
+      @if (editing === null) {
+        <div class="form-group">
+          <label for="student-password">Mật khẩu</label>
+          <input id="student-password" name="password" type="password" [(ngModel)]="password" required minlength="10" maxlength="128" autocomplete="new-password" placeholder="Ít nhất 10 ký tự">
+        </div>
+      }
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="busy() || userForm.invalid">{{ busy() ? 'Đang lưu…' : (editing !== null ? 'Lưu thay đổi' : 'Thêm học viên') }}</button>
+        @if (editing !== null) { <button class="btn" type="button" (click)="reset()">Hủy chỉnh sửa</button> }
+      </div>
+    </form>
+
+    <div class="table-card user-table">
+      <div class="user-table-title"><h2>Danh sách học viên</h2><p>{{ users().length }} tài khoản</p></div>
+      <table>
+        <thead><tr><th>Học viên</th><th>Email</th><th>Thao tác</th></tr></thead>
+        <tbody>
+          @for (u of users(); track u.id) {
+            <tr>
+              <td><span class="user-cell"><span class="user-avatar" aria-hidden="true">{{ u.displayName.slice(0, 1).toUpperCase() }}</span>{{ u.displayName }}</span></td>
+              <td>{{ u.email }}</td>
+              <td><div class="actions"><button class="btn" type="button" (click)="edit(u)">Sửa</button><button class="btn btn-danger" type="button" (click)="remove(u.id)">Xóa</button></div></td>
+            </tr>
+          } @empty { <tr><td class="empty" colspan="3">Chưa có học viên. Hãy thêm học viên đầu tiên.</td></tr> }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

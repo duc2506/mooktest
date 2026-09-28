@@ -1,0 +1,36 @@
+<section class="page-container history-page">
+  <div class="history-hero"><div><span class="history-eyebrow">HÀNH TRÌNH HỌC TẬP</span><h1>Bài đã nộp</h1>
+    <p>Xem lại những bài kiểm tra bạn đã hoàn thành và câu trả lời đã gửi.</p></div>
+    <div class="history-hero-count"><strong>{{ submissions().length }}</strong><span>bài đã hoàn thành</span></div></div>
+  @if (error()) { <p class="error notice" role="alert">{{ error() }}</p> }
+  @if (loading()) { <div class="history-empty" role="status">Đang tải lịch sử bài nộp…</div> }
+  @else {
+    <div class="history-heading"><div><span class="history-eyebrow">LỊCH SỬ</span><h2>Danh sách bài làm</h2></div>
+      <span class="history-total">{{ submissions().length }} bài nộp</span></div>
+    <div class="history-list">
+      @for (submission of submissions(); track submission.quizSubmissionId) {
+        <article class="history-card">
+          <div class="history-card-top"><span class="history-status"><i></i> ĐÃ NỘP</span>
+            <time>{{ submission.submittedAt | date:'dd/MM/yyyy · HH:mm' }}</time></div>
+          <h3>{{ submission.title }}</h3>
+          <div class="history-meta"><span>Mã bài #{{ submission.quizSubmissionId }}</span>
+            <span>{{ submission.answers.length }} câu trả lời</span></div>
+          <details><summary>Xem câu trả lời <span aria-hidden="true">⌄</span></summary>
+            <div class="history-answers">
+              @for (answer of submission.answers; track answer.questionId; let i = $index) {
+                <div class="history-answer"><span class="answer-index">{{ i + 1 }}</span><div><h4>{{ answer.content }}</h4>
+                  @for (selected of answer.selectedAnswers; track $index) { <span class="selected-answer">{{ selected }}</span> }
+                  @if (answer.responseText) { <p class="response-text">{{ answer.responseText }}</p> }
+                </div></div>
+              }
+            </div>
+          </details>
+        </article>
+      } @empty {
+        <div class="history-empty"><span class="empty-mark" aria-hidden="true">▤</span><h3>Chưa có bài nộp</h3>
+          <p>Bắt đầu một đề kiểm tra để theo dõi tiến độ của bạn tại đây.</p>
+          <a class="btn btn-primary" routerLink="/trainee/quizzes">Khám phá đề kiểm tra</a></div>
+      }
+    </div>
+  }
+</section>

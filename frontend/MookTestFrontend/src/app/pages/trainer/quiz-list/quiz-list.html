@@ -1,0 +1,46 @@
+<section class="page-container trainer-page">
+  <div class="workspace-hero">
+    <div>
+      <span class="eyebrow">KHÔNG GIAN TRAINER</span>
+      <h1>Quản lý đề kiểm tra</h1>
+      <p>Tạo đề mới rồi chọn câu hỏi từ ngân hàng hoặc viết câu hỏi riêng cho đề.</p>
+    </div>
+    <a class="btn btn-primary hero-action" routerLink="/trainer/quizzes/create">+ Tạo đề mới</a>
+  </div>
+
+  <div class="workspace-toolbar">
+    <div><strong>Danh sách đề kiểm tra</strong><span>{{ quizzes().length }} đề</span></div>
+    <label class="search-field"><span class="sr-only">Tìm đề kiểm tra</span>
+      <input type="search" placeholder="Tìm theo tên hoặc mô tả..." [value]="search()" (input)="search.set($any($event.target).value)">
+    </label>
+  </div>
+
+  @if (error()) { <p class="error notice" role="alert">{{ error() }}</p> }
+  @if (loading()) { <div class="empty-panel" role="status">Đang tải danh sách đề…</div> }
+  @else {
+    <div class="quiz-grid trainer-quiz-grid">
+      @for (quiz of filteredQuizzes(); track quiz.quizId) {
+        <article class="quiz-card trainer-quiz-card">
+          <div class="card-top"><span class="card-icon" aria-hidden="true">✦</span><span class="duration-chip">{{ quiz.duration }} phút</span></div>
+          <h2>{{ quiz.title }}</h2>
+          <p>{{ quiz.description || 'Chưa có mô tả cho đề kiểm tra này.' }}</p>
+          <div class="card-footer">
+            <a class="btn btn-primary" [routerLink]="['/trainer/quizzes', quiz.quizId]">Quản lý câu hỏi</a>
+            <div class="card-secondary">
+              <a [routerLink]="['/trainer/quizzes/edit', quiz.quizId]">Sửa đề</a>
+              <a [routerLink]="['/trainer/quizzes', quiz.quizId, 'submissions']">Bài nộp</a>
+              <button type="button" class="text-danger" (click)="deleteQuiz(quiz.quizId)">Xóa</button>
+            </div>
+          </div>
+        </article>
+      } @empty {
+        <div class="empty-panel">
+          <div class="empty-icon" aria-hidden="true">⌕</div>
+          <h2>{{ search() ? 'Không tìm thấy đề phù hợp' : 'Chưa có đề kiểm tra' }}</h2>
+          <p>{{ search() ? 'Thử từ khóa khác để tìm đề.' : 'Tạo đề đầu tiên để bắt đầu xây dựng ngân hàng câu hỏi.' }}</p>
+          @if (!search()) { <a class="btn btn-primary" routerLink="/trainer/quizzes/create">Tạo đề đầu tiên</a> }
+        </div>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,75 @@
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" routerLink="/" aria-label="MookTest - Trang chủ">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span class="brand-copy"><strong>MookTest</strong><small>Assessment workspace</small></span>
+    </a>
+    @if (auth.user(); as user) {
+      <nav class="main-nav" aria-label="Điều hướng chính">
+        <a [routerLink]="auth.landingPage" routerLinkActive="is-active">Đề kiểm tra</a>
+        @if (user.role === 'Trainer') {
+          <a routerLink="/trainer/question-bank" routerLinkActive="is-active">Ngân hàng câu hỏi</a>
+          <a routerLink="/trainer/users" routerLinkActive="is-active">Người dùng</a>
+        }
+        @if (user.role === 'Trainee') { <a routerLink="/trainee/submissions" routerLinkActive="is-active">Bài đã nộp</a> }
+      </nav>
+      <div class="account-menu" #accountMenu>
+        <button type="button" class="account-trigger" aria-label="Mở menu tài khoản"
+          aria-haspopup="dialog" [attr.aria-expanded]="accountOpen()" (click)="toggleAccount()">
+          <span class="avatar" aria-hidden="true">{{ user.displayName.slice(0, 1).toUpperCase() }}</span>
+          <span class="account-copy"><strong>{{ user.displayName }}</strong><small>{{ user.role === 'Trainer' ? 'Giảng viên' : 'Học viên' }}</small></span>
+          <span class="account-chevron" aria-hidden="true">⌄</span>
+        </button>
+        @if (accountOpen()) {
+          <div class="account-panel" role="dialog" aria-label="Tài khoản của bạn">
+            @if (accountView() === 'menu') {
+              <div class="account-panel-head">
+                <span class="avatar account-panel-avatar" aria-hidden="true">{{ user.displayName.slice(0, 1).toUpperCase() }}</span>
+                <div><strong>{{ user.displayName }}</strong><small>{{ user.email }}</small></div>
+              </div>
+              <div class="account-panel-actions">
+                <button type="button" (click)="showAccountView('profile')"><span aria-hidden="true">◉</span> Thông tin tài khoản</button>
+                <button type="button" (click)="showAccountView('password')"><span aria-hidden="true">◇</span> Đổi mật khẩu</button>
+                <button type="button" class="account-logout" (click)="logout()"><span aria-hidden="true">↪</span> Đăng xuất</button>
+              </div>
+            } @else if (accountView() === 'profile') {
+              <div class="account-panel-title">
+                <button type="button" class="account-back" aria-label="Quay lại menu tài khoản" (click)="showAccountView('menu')">←</button>
+                <strong>Thông tin tài khoản</strong>
+              </div>
+              <div class="account-profile">
+                <span class="avatar account-panel-avatar" aria-hidden="true">{{ user.displayName.slice(0, 1).toUpperCase() }}</span>
+                <strong>{{ user.displayName }}</strong>
+                <span class="account-role">{{ user.role === 'Trainer' ? 'Giảng viên' : 'Học viên' }}</span>
+              </div>
+              <dl class="account-details"><div><dt>Họ và tên</dt><dd>{{ user.displayName }}</dd></div><div><dt>Email</dt><dd>{{ user.email }}</dd></div><div><dt>Vai trò</dt><dd>{{ user.role === 'Trainer' ? 'Giảng viên' : 'Học viên' }}</dd></div></dl>
+            } @else {
+              <div class="account-panel-title">
+                <button type="button" class="account-back" aria-label="Quay lại menu tài khoản" [disabled]="passwordBusy()" (click)="showAccountView('menu')">←</button>
+                <strong>Đổi mật khẩu</strong>
+              </div>
+              <p class="account-help">Dùng mật khẩu hiện tại để bảo vệ tài khoản của bạn.</p>
+              <form class="account-password-form" (ngSubmit)="changePassword()">
+                <label for="currentPassword">Mật khẩu hiện tại</label>
+                <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" [(ngModel)]="currentPassword" [disabled]="passwordBusy()" required />
+                <label for="newPassword">Mật khẩu mới</label>
+                <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" [(ngModel)]="newPassword" [disabled]="passwordBusy()" minlength="10" maxlength="128" required />
+                <small class="account-hint">Ít nhất 10 ký tự.</small>
+                <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" [(ngModel)]="confirmPassword" [disabled]="passwordBusy()" required />
+                @if (passwordError()) { <p class="account-error" role="alert">{{ passwordError() }}</p> }
+                @if (passwordSuccess()) { <p class="account-success" role="status">{{ passwordSuccess() }}</p> }
+                <button type="submit" class="btn btn-primary" [disabled]="passwordBusy()">{{ passwordBusy() ? 'Đang lưu...' : 'Cập nhật mật khẩu' }}</button>
+              </form>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <nav class="auth-actions" aria-label="Tài khoản">
+        <a routerLink="/login">Đăng nhập</a><a class="btn btn-primary" routerLink="/register">Đăng ký</a>
+      </nav>
+    }
+  </div>
+</header>
+<main class="app-main"><router-outlet /></main>

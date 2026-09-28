@@ -1,0 +1,13 @@
+﻿<section class="form-page">
+  <h1>{{ id ? 'Sửa đề kiểm tra' : 'Tạo đề kiểm tra' }}</h1>
+  <p>Sau khi lưu, bạn có thể chọn câu hỏi từ ngân hàng hoặc viết câu riêng cho đề.</p>
+  <form #form="ngForm" (ngSubmit)="submit()">
+    <div class="form-group"><label for="title">Tên đề</label><input id="title" name="title" [(ngModel)]="draft().title" required maxlength="255"></div>
+    <div class="form-group"><label for="description">Mô tả</label><textarea id="description" name="description" [(ngModel)]="draft().description" rows="4"></textarea></div>
+    <div class="form-group"><label for="duration">Thời gian (phút)</label><input id="duration" name="duration" type="number" [(ngModel)]="draft().duration" required min="1" max="10080" step="1"></div>
+    @if (error()) { <p role="alert" class="error">{{ error() }}</p> }
+    <div class="form-actions"><a class="btn" routerLink="/trainer/quizzes">Quay lại</a>
+      <button class="btn btn-primary" [disabled]="form.invalid || busy()">{{ busy() ? 'Đang xử lý…' : 'Lưu đề' }}</button></div>
+  </form>
+</section>
+
